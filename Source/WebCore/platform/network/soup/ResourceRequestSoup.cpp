@@ -140,6 +140,23 @@ void ResourceRequest::updateSoupMessageBody(SoupMessage* soupMessage, BlobRegist
 
 }
 
+GRefPtr<GInputStream> ResourceRequest::createBodyStream() const
+{
+    auto formData = httpBody();
+    if (!formData || formData->isEmpty())
+        return nullptr;
+
+    auto resolvedFormData = formData->resolveBlobReferences();
+    uint64_t length = 0;
+    for (auto& element : resolvedFormData->elements())
+        length += element.lengthInBytes();
+
+    if (!length)
+        return nullptr;
+
+    return webkitFormDataInputStreamNew(WTFMove(resolvedFormData));
+}
+
 void ResourceRequest::updateSoupMessageHeaders(SoupMessageHeaders* soupHeaders) const
 {
     const HTTPHeaderMap& headers = httpHeaderFields();
